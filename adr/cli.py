@@ -23,7 +23,7 @@ RECIPE_DIR = os.path.join(here, 'recipes')
 QUERY_DIR = os.path.join(here, 'queries')
 
 
-def query_handler(args, remainder, config):
+def query_handler(args, remainder, config, parser):
     """Runs, formats and prints queries.
 
     All functionality remains same as adr.query:cli.
@@ -53,7 +53,7 @@ def query_handler(args, remainder, config):
             webbrowser.open(url, new=2)
 
 
-def recipe_handler(args, remainder, config):
+def recipe_handler(args, remainder, config, parser):
     """Runs recipes.
 
     All functionality remains the same as the deprecated adr.cli:cli.
@@ -140,29 +140,17 @@ def _set_logging_verbosity(is_verbose):
     log.setLevel(logging.DEBUG) if is_verbose else log.setLevel(logging.INFO)
 
 
-def main(args=sys.argv[1:]):
-    """Entry point for the adr module.
-
-    When the adr module is called, this method is run.
-
-    The argument list is parsed, and the appropriate parser or subparser is created.
+def _generate_parser(args, config):
+    """The argument list is parsed, and the appropriate parser or subparser is created.
 
     Using the argument list, arguments are parsed and grouped into a Namespace object
     representing known arguments, and a remainder list representing unknown arguments.
 
-    The method then calls the appropriate method for the action specified.
-
-    Supported use cases:
-
-    $ adr recipe <recipe_name>
-    $ adr query <query_name>
-    $ adr <recipe_name>
 
     :param list args: command-line arguments.
+    :param Configuration config: config object.
+    :returns:  parsed_args, remainder, parser
     """
-    # load config from file
-    config = Configuration(os.path.join(here, 'config.yml'))
-
     # create parsers and subparsers.
     parser = ArgumentParser(description='Runs adr recipes and/or queries.')
 
@@ -198,7 +186,29 @@ def main(args=sys.argv[1:]):
     # Additional args will go to remainder
     config.update(vars(parsed_args))
 
-    parsed_args.func(parsed_args, remainder, config)
+    return parser, parsed_args, remainder
+
+
+def main(args=sys.argv[1:]):
+    """Entry point for the adr module.
+
+    When the adr module is called, this method is run.
+
+    The argument list is parsed, and the appropriate parser or subparser is created.
+    The method then calls the appropriate method for the action specified.
+
+    Supported use cases:
+
+    $ adr recipe <recipe_name>
+    $ adr query <query_name>
+    $ adr <recipe_name>
+
+    :param list args: command-line arguments.
+    """
+    # load config from file
+    config = Configuration(os.path.join(here, 'config.yml'))
+    parser, parsed_args, remainder = _generate_parser(args, config)
+    parsed_args.func(parsed_args, remainder, config, parser)
 
 
 if __name__ == '__main__':
